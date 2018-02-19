@@ -1,3 +1,4 @@
 creds
 *.tfstate*
 .terraform
+mdot/creds.tf
