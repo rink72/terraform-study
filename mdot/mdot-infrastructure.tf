@@ -5,7 +5,8 @@ resource "azurerm_resource_group" "mdot-resource-group"
   location = "${var.region_a}"
 }
 
-
+# Traffic manager configuration
+##########################################################################################################
 
 resource "azurerm_traffic_manager_profile" "mdot_tf_profile" 
 {
@@ -27,6 +28,9 @@ resource "azurerm_traffic_manager_profile" "mdot_tf_profile"
   }
 }
 
+# Networking components
+##########################################################################################################
+
 resource "azurerm_virtual_network" "vnet_region_a"
 {
 	name = "${var.region_a}-vnet"
@@ -43,7 +47,11 @@ resource "azurerm_subnet" "subnet_region_a"
 	  address_prefix       = "${var.address_space_region_a}"
 }
 
+##########################################################################################################
 
+
+# Application gateway for Region A
+##########################################################################################################
 resource "azurerm_application_gateway" "appgateway_region_a"
 {
 	name = "mdot-testing-${var.region_a}"
@@ -73,5 +81,42 @@ resource "azurerm_application_gateway" "appgateway_region_a"
       name         = "${azurerm_virtual_network.vnet_region_a.name}-feip"  
       subnet_id  = "${azurerm_subnet.subnet_region_a.id}"
   }
+
+  backend_address_pool
+  {
+      name = "${azurerm_virtual_network.vnet_region_a.name}-beap"
+  }
+
+  backend_http_settings
+  {
+      name = "${azurerm_virtual_network.vnet_region_a.name}-be-http"
+      cookie_based_affinity = "Disabled"
+      port = 80
+      protocol = "http"
+      request_timeout = 1
+  }
+
+  http_listener
+  {
+      name = "${azurerm_virtual_network.vnet_region_a.name}-http-listener"
+      frontend_ip_configuration_name = "${azurerm_virtual_network.vnet_region_a.name}-feip"
+      frontend_port_name = "${azurerm_virtual_network.vnet_region_a.name}-feport"
+      protocol = "http"
+  }
+
+  request_routing_rule
+  {
+      name = "${azurerm_virtual_network.vnet_region_a.name}-routing-rule"
+      rule_type = "Basic"
+      http_listener_name = "${azurerm_virtual_network.vnet_region_a.name}-http-listener"
+      backend_address_pool_name = "${azurerm_virtual_network.vnet_region_a.name}-beap"
+      backend_http_settings_name = "${azurerm_virtual_network.vnet_region_a.name}-be-http"
+
+  }
+
+################################################################################################
+
+
+
 	
 }
