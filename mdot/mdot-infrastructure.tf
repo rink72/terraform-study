@@ -38,7 +38,7 @@ resource "azurerm_traffic_manager_endpoint" "mdot_tf_endpoint_region_a"
   target_resource_id = "${azurerm_public_ip.public_ip_region_a.id}"
   weight = 100
 
-
+  depends_on = ["azurerm_application_gateway.appgateway_region_a"]
 }
 
 # Networking components
@@ -66,6 +66,7 @@ resource "azurerm_public_ip" "public_ip_region_a"
     location = "${var.region_a}"
     resource_group_name = "${azurerm_resource_group.mdot-resource-group.name}"
     public_ip_address_allocation = "dynamic"
+
 }
 
 ##########################################################################################################
@@ -99,8 +100,7 @@ resource "azurerm_application_gateway" "appgateway_region_a"
 	}
 	
 	frontend_ip_configuration {
-      name         = "${azurerm_virtual_network.vnet_region_a.name}-feip"  
-      subnet_id  = "${azurerm_subnet.subnet_region_a.id}"
+      name         = "${azurerm_virtual_network.vnet_region_a.name}-feip"
       public_ip_address_id = "${azurerm_public_ip.public_ip_region_a.id}"
   }
 
