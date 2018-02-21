@@ -107,7 +107,7 @@ resource "azurerm_application_gateway" "appgateway_region_a"
   backend_address_pool
   {
       name = "${azurerm_virtual_network.vnet_region_a.name}-beap"
-      fqdn_list = ["${azurerm_app_service.appservice_region_a.default_site_hostname}"]
+      fqdn_list = ["${azurerm_template_deployment.appservice_region_a.outputs["default_site_hostname"]}"]
   }
 
   backend_http_settings
@@ -160,12 +160,10 @@ resource "azurerm_app_service_plan" "appservice_plan_region_a"
   
 }
 
-resource "azurerm_app_service" "appservice_region_a" 
+resource "azurerm_template_deployment" "appservice_region_a" 
 {
     name = "mdot-${var.region_a}-appservice"
-    location = "${var.region_a}"
     resource_group_name = "${azurerm_resource_group.mdot-resource-group.name}"
-    app_service_plan_id = "${azurerm_app_service_plan.appservice_plan_region_a.id}"
 
 	template_body = <<DEPLOY
 	{
@@ -213,13 +211,28 @@ resource "azurerm_app_service" "appservice_region_a"
 		  },
 		  "location": "[resourceGroup().location]"
 		}
-	  ]
+	  ],
+
+    "outputs": 
+    {
+      "default_site_hostname": 
+      {
+        "type": "string",
+        "value": "[resourceId('Microsoft.Web/sites/hostNameBindings', parameters('domainId'))]"
+      }
+    }
+
+
+
 	}
 	DEPLOY
 	
 	parameters
 	{
-		name = "golang"
-		image = "golang"
+		app_service_plan_id = "${azurerm_app_service_plan.appservice_plan_region_a.id}"
+    name = "simple-web"
+		image = "yeasy/simple-web"
 	}
+
+  deployment_mode = "Incremental"
 }
