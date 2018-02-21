@@ -167,10 +167,59 @@ resource "azurerm_app_service" "appservice_region_a"
     resource_group_name = "${azurerm_resource_group.mdot-resource-group.name}"
     app_service_plan_id = "${azurerm_app_service_plan.appservice_plan_region_a.id}"
 
-    site_config
-    {
-        dotnet_framework_version = "v4.0"
-        remote_debugging_enabled = false
-    }
-
+	template_body = <<DEPLOY
+	{
+	  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	  "contentVersion": "1.0.0.0",
+	  "parameters": {
+		"app_service_plan_id": {
+		  "type": "string",
+		  "metadata": {
+			"description": "App Service Plan ID"
+		  }
+		},
+		"name": {
+		  "type": "string",
+		  "metadata": {
+			"description": "App Name"
+		  }
+		},
+		"image": {
+		  "type": "string",
+		  "metadata": {
+			"description": "Docker image"
+		  }
+		}
+	  },
+	  "resources": [
+		{
+		  "apiVersion": "2016-08-01",
+		  "kind": "app,linux,container",
+		  "name": "[parameters('name')]",
+		  "type": "Microsoft.Web/sites",
+		  "properties": {
+			"name": "[parameters('name')]",
+			"siteConfig": {
+			  "alwaysOn": true,
+			  "appSettings": [
+				{
+				  "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
+				  "value": "false"
+				}
+			  ],
+			  "linuxFxVersion": "[concat('DOCKER|', parameters('image'))]"
+			},
+			"serverFarmId": "[parameters('app_service_plan_id')]"
+		  },
+		  "location": "[resourceGroup().location]"
+		}
+	  ]
+	}
+	DEPLOY
+	
+	parameters
+	{
+		name = "golang"
+		image = "golang"
+	}
 }
