@@ -101,6 +101,7 @@ resource "azurerm_application_gateway" "appgateway_region_a"
 	frontend_ip_configuration {
       name         = "${azurerm_virtual_network.vnet_region_a.name}-feip"  
       subnet_id  = "${azurerm_subnet.subnet_region_a.id}"
+      public_ip_address_id = "${azurerm_public_ip.public_ip_region_a.id}"
   }
 
   backend_address_pool
