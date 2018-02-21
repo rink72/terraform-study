@@ -28,10 +28,16 @@ variable traffic_manager_name
 	default = "samb72mdotdemo"
 }
 
-variable appservice_sku
+variable appservice_sku_tier
 {
-	description = "The SKU size of the mdot service to deploy"
-	default = "SHARED"
+	description = "The SKU tier of the mdot app service to deploy"
+	default = "Standard"
+}
+
+variable appservice_sku_size 
+{
+	description = "The SKU size of the mdot app service to deploy"
+	default = "S1"
 }
 
 variable appservice_count

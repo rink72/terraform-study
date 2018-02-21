@@ -28,6 +28,19 @@ resource "azurerm_traffic_manager_profile" "mdot_tf_profile"
   }
 }
 
+
+resource "azurerm_traffic_manager_endpoint" "mdot_tf_endpoint_region_a" 
+{
+  name = "mdot-${var.region_a}-app-gateway"
+  resource_group_name = "${azurerm_resource_group.mdot-resource-group.name}"
+  profile_name = "${azurerm_traffic_manager_profile.mdot_tf_profile.name}"
+  type = "azureEndpoints"
+  target_resource_id = "${azurerm_public_ip.public_ip_region_a.id}"
+  weight = 100
+
+
+}
+
 # Networking components
 ##########################################################################################################
 
@@ -45,6 +58,14 @@ resource "azurerm_subnet" "subnet_region_a"
 	  resource_group_name  = "${azurerm_resource_group.mdot-resource-group.name}"
 	  virtual_network_name = "${azurerm_virtual_network.vnet_region_a.name}"
 	  address_prefix       = "${var.address_space_region_a}"
+}
+
+resource "azurerm_public_ip" "public_ip_region_a" 
+{
+    name = "public-ip-${var.region_a}" 
+    location = "${var.region_a}"
+    resource_group_name = "${azurerm_resource_group.mdot-resource-group.name}"
+    public_ip_address_allocation = "dynamic"
 }
 
 ##########################################################################################################
@@ -85,6 +106,7 @@ resource "azurerm_application_gateway" "appgateway_region_a"
   backend_address_pool
   {
       name = "${azurerm_virtual_network.vnet_region_a.name}-beap"
+      fqdn_list = ["${azurerm_app_service.appservice_region_a.default_site_hostname}"]
   }
 
   backend_http_settings
@@ -94,6 +116,7 @@ resource "azurerm_application_gateway" "appgateway_region_a"
       port = 80
       protocol = "http"
       request_timeout = 1
+
   }
 
   http_listener
@@ -113,10 +136,40 @@ resource "azurerm_application_gateway" "appgateway_region_a"
       backend_http_settings_name = "${azurerm_virtual_network.vnet_region_a.name}-be-http"
 
   }
+}
 
-################################################################################################
+##########################################################################################################
 
 
 
-	
+# App Service and Application infrastructure for Region A
+##########################################################################################################
+
+resource "azurerm_app_service_plan" "appservice_plan_region_a" 
+{
+    name = "mdot-${var.region_a}-appservice-plan"
+    location = "${var.region_a}"
+    resource_group_name = "${azurerm_resource_group.mdot-resource-group.name}"
+
+    sku
+    {
+        tier = "${var.appservice_sku_tier}"
+        size = "${var.appservice_sku_size}"
+    }
+  
+}
+
+resource "azurerm_app_service" "appservice_region_a" 
+{
+    name = "mdot-${var.region_a}-appservice"
+    location = "${var.region_a}"
+    resource_group_name = "${azurerm_resource_group.mdot-resource-group.name}"
+    app_service_plan_id = "${azurerm_app_service_plan.appservice_plan_region_a.id}"
+
+    site_config
+    {
+        dotnet_framework_version = "v4.0"
+        remote_debugging_enabled = false
+    }
+
 }
